@@ -98,10 +98,12 @@ Estudiante de ISC en ESCOM · IPN
 
 **Garcia Ambrosio**
 Estudiante de ISC en ESCOM · IPN
+
 [![GitHub](https://img.shields.io/badge/GitHub-AbsorbedSun-181717?style=flat-square&logo=github)](https://github.com/AbsorbedSun)
 
 **Andrawi Pérez**
 Estudiante de ISC en ESCOM · IPN
+
 [![GitHub](https://img.shields.io/badge/GitHub-andrawiP801-181717?style=flat-square&logo=github)](https://github.com/andrawiP801)
  
 ---
