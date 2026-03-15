@@ -11,8 +11,8 @@ Version: 3.0 (C++)
 */
 
 #include <iostream>
-#include <cstring>
 #include <string>
+#include <limits>
 
 using namespace std;
 
@@ -27,15 +27,15 @@ const string CADENA_VACIA = "e";
 // Retorna true si la cadena es valida, false en caso contrario
 bool esValida(const string &cadena)
 {
-    if (cadena.empty()) return false; // rechaza cadena vacia
+    // acepta "e" como representacion de la cadena vacia
+    if (cadena == CADENA_VACIA)
+        return true;
 
-    // Recorre cada caracter de la cadena y verifica que sea '0' o '1'
     for (char c : cadena)
     {
         if (c != ALFABETO_0 && c != ALFABETO_1)
-            return false; // caracter fuera del alfabeto
+            return false; // encontramos un simbolo fuera del alfabeto: cadena no valida
     }
-
     return true;
 }
 
@@ -44,7 +44,10 @@ bool esValida(const string &cadena)
 // La notacion |cadena| representa la longitud en teoria de lenguajes
 void calcularLongitud(const string &cadena)
 {
-    cout << "  |" << cadena << "| = " << cadena.size() << "\n";
+    if (cadena == CADENA_VACIA)
+        cout << "  |e| = 0\n"; // longitud de epsilon es 0
+    else
+        cout << "  |" << cadena << "| = " << cadena.size() << "\n";
 }
 
 // Compara dos cadenas caracter a caracter
@@ -142,20 +145,14 @@ string complementoUno(const string &s)
 }
 
 // Busca si 'texto' existe como subcadena dentro de 'cadena'
-// Utiliza strstr de cstring que retorna un puntero a la primera ocurrencia
+// Utiliza string::find que retorna string::npos si no encuentra la subcadena
 // Parametros:
 //   cadena - cadena donde se realizara la busqueda
 //   texto  - subcadena a buscar
 // Retorna true si fue encontrada, false en caso contrario
 bool busquedaCadena(const string &cadena, const string &texto)
 {
-    // c_str() convierte string a char* que es lo que necesita strstr
-    char *resultado = strstr(cadena.c_str(), texto.c_str());
-
-    if (resultado != nullptr)
-        return true;  // strstr retorno un puntero valido: la subcadena existe
-    else
-        return false; // strstr retorno nullptr: la subcadena no existe
+    return cadena.find(texto) != string::npos;
 }
 
 // MENU
@@ -193,7 +190,8 @@ int main()
 
     // Leer cadena 1 con validacion de alfabeto
     // Repite hasta recibir una cadena valida sobre {0,1}
-    do {
+    do
+    {
         cout << "Ingrese la cadena 1 (solo '0' y '1'): ";
         cin >> texto;
         if (!esValida(texto))
@@ -204,7 +202,8 @@ int main()
 
     // Leer cadena 2 con validacion de alfabeto
     // Repite hasta recibir una cadena valida sobre {0,1}
-    do {
+    do
+    {
         cout << "Ingrese la cadena 2 (solo '0' y '1'): ";
         cin >> texto;
         if (!esValida(texto))
@@ -214,124 +213,158 @@ int main()
     cadena2 = texto;
 
     // Ciclo principal del menu: itera hasta que el usuario elija la opcion 8 (Salir)
-    do {
+    do
+    {
         opcion = menu();
 
         switch (opcion)
         {
-            case 1:
-            {
-                // Calcula e imprime la longitud de ambas cadenas
-                cout << "\n-- Longitud --\n";
-                calcularLongitud(cadena1);
-                calcularLongitud(cadena2);
-                break;
-            }
+        case 1:
+        {
+            // Calcula e imprime la longitud de ambas cadenas
+            cout << "\n-- Longitud --\n";
+            calcularLongitud(cadena1);
+            calcularLongitud(cadena2);
+            break;
+        }
 
-            case 2:
-            {
-                // Compara las dos cadenas e indica si son iguales o distintas
-                cout << "\n-- Igualdad --\n";
-                if (sonIguales(cadena1, cadena2))
-                    cout << "  \"" << cadena1 << "\" == \"" << cadena2 << "\": Son IGUALES\n";
-                else
-                    cout << "  \"" << cadena1 << "\" != \"" << cadena2 << "\": Son DISTINTAS\n";
-                break;
-            }
+        case 2:
+        {
+            // Compara las dos cadenas e indica si son iguales o distintas
+            cout << "\n-- Igualdad --\n";
+            if (sonIguales(cadena1, cadena2))
+                cout << "  \"" << cadena1 << "\" == \"" << cadena2 << "\": Son IGUALES\n";
+            else
+                cout << "  \"" << cadena1 << "\" != \"" << cadena2 << "\": Son DISTINTAS\n";
+            break;
+        }
 
-            case 3:
-            {
-                // Verifica si cada cadena es palindromo e imprime el resultado
-                cout << "\n-- Palindromo --\n";
-                cout << "  \"" << cadena1 << "\": "
-                     << (esPalindromo(cadena1) ? "ES palindromo" : "NO es palindromo") << "\n";
-                cout << "  \"" << cadena2 << "\": "
-                     << (esPalindromo(cadena2) ? "ES palindromo" : "NO es palindromo") << "\n";
-                break;
-            }
+        case 3:
+        {
+            // Verifica si cada cadena es palindromo e imprime el resultado
+            cout << "\n-- Palindromo --\n";
+            cout << "  \"" << cadena1 << "\": "
+                 << (esPalindromo(cadena1) ? "ES palindromo" : "NO es palindromo") << "\n";
+            cout << "  \"" << cadena2 << "\": "
+                 << (esPalindromo(cadena2) ? "ES palindromo" : "NO es palindromo") << "\n";
+            break;
+        }
 
-            case 4:
+        case 4:
+        {
+            // Solicita la subcadena a buscar y la subcadena de reemplazo
+            // Ambas entradas deben pertenecer al alfabeto {0,1}
+            // Valida que el reemplazo no sea mas largo que la cadena buscada
+            // Aplica el reemplazo sobre ambas cadenas
+            cout << "\n-- Reemplazo de cadenas --\n";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+            do
             {
-                // Solicita la subcadena a buscar y la subcadena de reemplazo
-                // Valida que el reemplazo no sea mas largo que la cadena buscada
-                // Aplica el reemplazo sobre ambas cadenas
-                cout << "\n-- Reemplazo de cadenas --\n";
                 cout << "Ingrese la cadena a reemplazar: ";
-                cin.ignore(); // limpia el salto de linea pendiente en el buffer
                 getline(cin, texto);
+                if (!esValida(texto))
+                    cout << "ERROR: La cadena contiene simbolos fuera de {0,1}\n";
+            } while (!esValida(texto));
+
+            do
+            {
                 cout << "Ingrese la cadena de reemplazo: ";
                 getline(cin, textoReemplazo);
+                if (!esValida(textoReemplazo))
+                    cout << "ERROR: La cadena contiene simbolos fuera de {0,1}\n";
+            } while (!esValida(textoReemplazo));
 
-                if (textoReemplazo.size() > texto.size())
-                {
-                    cout << "La cadena de reemplazo es mas grande que la cadena a reemplazar" << endl;
-                    break;
-                }
-                else
-                {
-                    cout << "Cadena 1: ";
-                    reemplazaCadenas(cadena1, texto, textoReemplazo);
-                    cout << "Cadena 2: ";
-                    reemplazaCadenas(cadena2, texto, textoReemplazo);
-                }
+            if (textoReemplazo.size() > texto.size())
+            {
+                cout << "La cadena de reemplazo es mas grande que la cadena a reemplazar" << endl;
                 break;
             }
-
-            case 5:
+            else
             {
-                // Las cadenas binarias no contienen espacios por definicion,
-                // por lo que esta operacion se demuestra sobre una cadena libre ingresada por el usuario
-                string textoLibre;
-                cout << "\n-- Quitar espacios en blanco --\n";
-                cout << "  Ingrese una cadena con posibles espacios: ";
-                cin.ignore(); // limpia el salto de linea pendiente en el buffer
+                cout << "Cadena 1: ";
+                reemplazaCadenas(cadena1, texto, textoReemplazo);
+                cout << "Cadena 2: ";
+                reemplazaCadenas(cadena2, texto, textoReemplazo);
+            }
+            break;
+        }
+
+        case 5:
+        {
+            // Las cadenas binarias no contienen espacios por definicion,
+            // por lo que esta operacion se demuestra sobre una cadena libre ingresada por el usuario
+            string textoLibre;
+            cout << "\n-- Quitar espacios en blanco --\n";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // limpia el buffer
+            
+            // Solicita la cadena y valida sobre la version sin espacios
+            // ya que los espacios son esperados en la entrada y no deben contar como error
+            do
+            {
+                cout << "Ingrese una cadena con posibles espacios: ";
                 getline(cin, textoLibre);
-                cout << "  Original : \"" << textoLibre << "\"\n";
-                cout << "  Sin espacios: \"" << quitarEspacios(textoLibre) << "\"\n";
-                break;
-            }
 
-            case 6:
-            {
-                // Calcula e imprime el complemento a 1 de ambas cadenas
-                cout << "\n-- Complemento a Uno --\n";
-                cout << "  complemento(" << cadena1 << ") = " << complementoUno(cadena1) << "\n";
-                cout << "  Complemento(" << cadena2 << ") = " << complementoUno(cadena2) << "\n";
-                break;
-            }
+                // Primero se quitan los espacios y luego se valida el resultado
+                // para no rechazar cadenas validas que contengan espacios entre bits
+                string sinEspacios = quitarEspacios(textoLibre); 
+                if (!esValida(sinEspacios))
+                    cout << "ERROR: La cadena contiene simbolos fuera de {0,1}\n";
+            } while (!esValida(quitarEspacios(textoLibre))); // repite hasta obtener una cadena valida
 
-            case 7:
+            // Muestra la cadena original con espacios y la version limpia
+            cout << "  Original : \"" << textoLibre << "\"\n";
+            cout << "  Sin espacios: \"" << quitarEspacios(textoLibre) << "\"\n";
+            break;
+        }
+
+        case 6:
+        {
+            // Calcula e imprime el complemento a 1 de ambas cadenas
+            cout << "\n-- Complemento a Uno --\n";
+            cout << "  complemento(" << cadena1 << ") = " << complementoUno(cadena1) << "\n";
+            cout << "  Complemento(" << cadena2 << ") = " << complementoUno(cadena2) << "\n";
+            break;
+        }
+
+        case 7:
+        {
+            // Solicita una subcadena y la busca dentro de cadena1 y cadena2
+            // Imprime si fue encontrada o no en cada caso
+            cout << "\n-- Busqueda de una cadena dentro de otra --\n";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // limpia el buffer
+
+            do
             {
-                // Solicita una subcadena y la busca dentro de cadena1 y cadena2
-                // Imprime si fue encontrada o no en cada caso
-                cout << "\n-- Busqueda de una cadena dentro de otra --\n";
                 cout << "Ingrese la cadena a buscar: ";
-                cin.ignore(); // limpia el salto de linea pendiente en el buffer
                 getline(cin, texto);
+                if (!esValida(texto)) // valida que la cadena a buscar solo contenga simbolos del alfabeto
+                    cout << "ERROR: La cadena contiene simbolos fuera de {0,1}\n";
+            } while (!esValida(texto));
 
-                // Busqueda en cadena1
-                if (busquedaCadena(cadena1, texto))
-                    cout << "Cadena " << texto << " encontrada en la cadena " << cadena1 << endl;
-                else
-                    cout << "Cadena " << texto << " no encontrada en la cadena " << cadena1 << endl;
+            // Busqueda en cadena1
+            if (busquedaCadena(cadena1, texto))
+                cout << "Cadena " << texto << " encontrada en la cadena " << cadena1 << endl;
+            else
+                cout << "Cadena " << texto << " no encontrada en la cadena " << cadena1 << endl;
 
-                // Busqueda en cadena2
-                if (busquedaCadena(cadena2, texto))
-                    cout << "Cadena " << texto << " encontrada en la cadena " << cadena2 << endl;
-                else
-                    cout << "Cadena " << texto << " no encontrada en la cadena " << cadena2 << endl;
-                break;
-            }
+            // Busqueda en cadena2
+            if (busquedaCadena(cadena2, texto))
+                cout << "Cadena " << texto << " encontrada en la cadena " << cadena2 << endl;
+            else
+                cout << "Cadena " << texto << " no encontrada en la cadena " << cadena2 << endl;
+            break;
+        }
 
-            case 8:
-            {
-                // Termina el ciclo do-while y finaliza el programa
-                cout << "\nSaliendo del programa.\n";
-                break;
-            }
+        case 8:
+        {
+            // Termina el ciclo do-while y finaliza el programa
+            cout << "\nSaliendo del programa.\n";
+            break;
+        }
 
-            default:
-                cout << "Opcion invalida. Intente de nuevo.\n";
+        default:
+            cout << "Opcion invalida. Intente de nuevo.\n";
         }
 
     } while (opcion != 8);
