@@ -97,7 +97,7 @@ void reemplazaCadenas(string cadena, string &texto, string &textoReemplazo)
 
     // Busca la subcadena, reemplaza y vuelve a buscar hasta que no haya mas ocurrencias
     // El incremento del for vuelve a buscar desde el inicio despues de cada reemplazo
-    for (pos = cadena.find(texto); pos != string::npos; pos = cadena.find(texto))
+    for (pos = cadena.find(texto); pos != string::npos; pos = cadena.find(texto, pos + textoReemplazo.size()))
     {
         // Reemplaza 'texto.size()' caracteres desde 'pos' por 'textoReemplazo'
         cadena.replace(pos, texto.size(), textoReemplazo);
