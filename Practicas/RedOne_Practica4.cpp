@@ -1,261 +1,300 @@
 /*
- * Titulo    : Practica 4 - Analisis Sintactico de Expresiones Aritmeticas
- * Asignatura: Teoria de la Computacion
- * Alumno    : Garcia Ambrosio Aldo / Leanos Gutierrez Alan Rodrigo /
- *             Perez Marquez David Andrawi
- * Equipo    : Red One  |  Grupo: 4CM5
- * Profesora : Sanchez Garcia Luz Maria
- * Fecha     : Abril 2026
- * Version   : 2.0
- * Descripcion: Valida si una expresion aritmetica pertenece a la
- *              notacion prefija, posfija o infija.
- *              NO convierte entre notaciones ni calcula resultados.
- * Compilar  : g++ -std=c++11 -Wall practica4.cpp -o practica4
+Practica 4 - Analisis Sintactico de Expresiones Aritmeticas
+Teoria de la Computacion
+Garcia Ambrosio Aldo
+Leanos Gutierrez Alan Rodrigo
+Perez Marquez David Andrawi
+Red One
+Grupo: 4CM5
+Version   : 4.0
+Descripcion:Recibe una expresion por terminal y determina
+            automaticamente si es prefija, posfija o infija.
+            NO convierte entre notaciones ni calcula resultados.
+Compilar: g++ -std=c++11 -Wall practica4.cpp -o practica4
  */
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <cctype>
- 
+
 using namespace std;
- 
+
 /* ================================================================
- *  HELPERS
- *  Trabajan sobre tokens completos (strings), no sobre chars
- *  sueltos, por lo que soportan operandos multicaracter (ab, x1…)
+ *  VARIABLES GLOBALES
+ *  tokens  : lista de tokens extraidos de la expresion
+ *  pos     : posicion actual dentro de la lista de tokens
  * ================================================================ */
- 
-bool esOperador(const string& t) {
-    return t.size() == 1 &&
-           (t[0]=='+' || t[0]=='-' || t[0]=='*' || t[0]=='/');
+
+vector<string> tokens;
+int pos = 0;
+
+/* ================================================================
+ *  FUNCIONES DE CLASIFICACION
+ *  Determinan si un token es operador u operando.
+ * ================================================================ */
+
+// Un operador es exactamente uno de los simbolos: + - * /
+bool esOperador(const string& tok) {
+    if (tok.size() != 1) return false;
+    char c = tok[0];
+    return c == '+' || c == '-' || c == '*' || c == '/';
 }
- 
-bool esOperando(const string& t) {
-    if (t.empty()) return false;
-    for (size_t i = 0; i < t.size(); i++)
-        if (!isalnum((unsigned char)t[i])) return false;
+
+// Un operando es una cadena de letras y/o digitos (ej: a, x1, ab)
+bool esOperando(const string& tok) {
+    if (tok.empty()) return false;
+    for (int i = 0; i < (int)tok.size(); i++) {
+        if (!isalnum((unsigned char)tok[i])) return false;
+    }
     return true;
 }
- 
+
 /* ================================================================
  *  TOKENIZADOR
- *  Separa la expresion en tokens teniendo en cuenta:
- *    - espacios en blanco (delimitadores)
- *    - parentesis como tokens individuales
- *    - operandos/operadores multicaracter
+ *  Divide la expresion en partes llamadas tokens:
+ *    - Ignora espacios en blanco
+ *    - Los parentesis son tokens individuales
+ *    - Cualquier otra secuencia continua forma un solo token
  * ================================================================ */
- 
-static vector<string> tokens;
-static int posGlobal = 0;
- 
+
 void tokenizar(const string& expr) {
     tokens.clear();
-    int i = 0, len = (int)expr.size();
-    while (i < len) {
-        if (isspace((unsigned char)expr[i])) { i++; continue; }
-        /* Parentesis: token individual */
+    pos = 0;
+
+    int i = 0;
+    int largo = (int)expr.size();
+
+    while (i < largo) {
+
+        // Ignorar espacios
+        if (isspace((unsigned char)expr[i])) {
+            i++;
+            continue;
+        }
+
+        // Parentesis: cada uno es su propio token
         if (expr[i] == '(' || expr[i] == ')') {
             tokens.push_back(string(1, expr[i]));
-            i++; continue;
+            i++;
+            continue;
         }
-        /* Cualquier otro token (operando, operador, '=') */
+
+        // Cualquier otra secuencia sin espacios ni parentesis
         string tok;
-        while (i < len && !isspace((unsigned char)expr[i]) &&
-               expr[i] != '(' && expr[i] != ')') {
-            tok += expr[i++];
+        while (i < largo && !isspace((unsigned char)expr[i])
+               && expr[i] != '(' && expr[i] != ')') {
+            tok += expr[i];
+            i++;
         }
         tokens.push_back(tok);
     }
-    posGlobal = 0;
 }
- 
-/* Accesores del cursor global */
-bool hayToken()           { return posGlobal < (int)tokens.size(); }
-const string& actual()    {
-    static const string vacio = "";
-    return hayToken() ? tokens[posGlobal] : vacio;
+
+// Devuelve true si aun hay tokens por leer
+bool hayMasTokens() {
+    return pos < (int)tokens.size();
 }
- 
-/* ================================================================
- *  NOTACION PREFIJA
- *
- *  Gramatica (descenso recursivo):
- *    prefija -> '=' atomo operando
- *    atomo   -> operando
- *             | operador atomo atomo
- *
- *  El '=' encabeza la expresion, seguido de la expresion completa
- *  y por ultimo el operando que recibe el resultado.
- * ================================================================ */
- 
-bool atomoPrefijo() {
-    if (!hayToken()) return false;
-    if (esOperando(actual()))  { posGlobal++; return true; }
-    if (esOperador(actual()))  {
-        posGlobal++;
-        return atomoPrefijo() && atomoPrefijo();
+
+// Devuelve el token actual (sin avanzar)
+string tokenActual() {
+    if (hayMasTokens()) return tokens[pos];
+    return "";
+}
+
+/* NOTACION PREFIJA 
+    Ejemplo valido:   = + a b c
+    Ejemplo invalido: + a b = c */
+
+// Intenta leer una sub-expresion prefija desde la posicion actual
+bool leerExpresionPrefija() {
+    if (!hayMasTokens()) return false;
+
+    // Caso base: si el token actual es un operando, lo consumimos
+    if (esOperando(tokenActual())) {
+        pos++;
+        return true;
     }
+
+    // Caso recursivo: si es operador, debe ir seguido de dos expresiones
+    if (esOperador(tokenActual())) {
+        pos++;
+        bool izquierda = leerExpresionPrefija();
+        bool derecha   = leerExpresionPrefija();
+        return izquierda && derecha;
+    }
+
     return false;
 }
- 
+
 bool validarPrefija(const string& expr) {
     tokenizar(expr);
-    int n = (int)tokens.size();
-    if (n < 3) return false;
-    if (tokens[0] != "=") return false;   /* debe iniciar con '=' */
-    posGlobal = 1;
-    if (!atomoPrefijo()) return false;   /* expresion bien formada */
-    if (!hayToken() || !esOperando(actual())) return false; /* operando final */
-    posGlobal++;
-    return posGlobal == n;                       /* no deben sobrar tokens */
+    int total = (int)tokens.size();
+
+    // Minimo: = op a b  (4 tokens con operador, o = a b para expresion simple)
+    if (total < 3) return false;
+
+    // Debe comenzar con '='
+    if (tokens[0] != "=") return false;
+
+    // Intentar leer la expresion a partir del token 1
+    pos = 1;
+    if (!leerExpresionPrefija()) return false;
+
+    // Debe quedar exactamente una variable al final
+    if (!hayMasTokens() || !esOperando(tokenActual())) return false;
+    pos++;
+
+    // No deben sobrar tokens
+    return pos == total;
 }
- 
-/* ================================================================
- *  NOTACION POSFIJA
- *
- *  Algoritmo de contador de pila:
- *    - operando  -> pila++
- *    - operador  -> requiere pila >= 2, pila--
- *    - '=' cierra la expresion; la pila debe quedar en 1
- * ================================================================ */
- 
+
+/* NOTACION POSFIJA
+    Ejemplo valido:   a b + c =
+    Ejemplo invalido: a + b c = */
+
 bool validarPosfija(const string& expr) {
     tokenizar(expr);
-    int n = (int)tokens.size();
-    if (n < 3)  return false;
-    if (tokens[n - 1] != "=") return false;  /* debe terminar con '=' */
-    int fin = n-1;
-    if (esOperando(tokens[fin-1])) fin--;
-    
-    if (fin < 2) return false;  
+    int total = (int)tokens.size();
+
+    // Minimo: a b + =
+    if (total < 3) return false;
+
+    // Debe terminar con '='
+    if (tokens[total - 1] != "=") return false;
+
+    // Descontar la variable asignada si aparece antes del '='
+    int fin = total - 1;
+    if (esOperando(tokens[fin - 1])) fin--;
+
+    if (fin < 2) return false;
+
+    // Simular pila
     int pila = 0;
     for (int i = 0; i < fin; i++) {
-        if      (esOperando(tokens[i])) pila++;
-        else if (esOperador(tokens[i])) { if (pila < 2) return false; pila--; }
-        else return false;
+        if (esOperando(tokens[i])) {
+            pila++;
+        } else if (esOperador(tokens[i])) {
+            if (pila < 2) return false;  // No hay suficientes operandos
+            pila--;
+        } else {
+            return false;  // Token inesperado
+        }
     }
+
+    // La pila debe tener exactamente un resultado
     return pila == 1;
 }
- 
-/* ================================================================
- *  NOTACION INFIJA
- *
- *  Gramatica con precedencia (descenso recursivo):
- *    asignacion -> expr  '=' operando
- *               | operando '=' expr
- *    expr       -> termino { ('+' | '-') termino  }
- *    termino    -> factor  { ('*' | '/') factor   }
- *    factor     -> '(' expr ')' | operando
- * ================================================================ */
- 
-bool infExpr();
-bool infTermino();
- 
-bool infFactor() {
-    if (!hayToken()) return false;
-    if (actual() == "(") {
-        posGlobal++;
-        if (!infExpr()) return false;
-        if (!hayToken() || actual() != ")") return false;
-        posGlobal++; return true;
+
+/* NOTACION INFIJA
+    Ejemplo valido:   a + b * c = resultado
+    Ejemplo invalido: a + = b c */
+
+bool leerExprInfija();  // Declaracion adelantada
+
+// Lee un factor: un operando o una expresion entre parentesis
+bool leerFactorInfijo() {
+    if (!hayMasTokens()) return false;
+
+    // Caso: expresion entre parentesis
+    if (tokenActual() == "(") {
+        pos++;
+        if (!leerExprInfija()) return false;
+        if (!hayMasTokens() || tokenActual() != ")") return false;
+        pos++;
+        return true;
     }
-    if (esOperando(actual())) { posGlobal++; return true; }
+
+    // Caso: operando simple
+    if (esOperando(tokenActual())) {
+        pos++;
+        return true;
+    }
+
     return false;
 }
- 
-bool infTermino() {
-    if (!infFactor()) return false;
-    while (hayToken() && (actual()=="*" || actual()=="/"))
-        { posGlobal++; if (!infFactor()) return false; }
+
+// Lee un termino: factores separados por * o /
+bool leerTerminoInfijo() {
+    if (!leerFactorInfijo()) return false;
+
+    while (hayMasTokens() && (tokenActual() == "*" || tokenActual() == "/")) {
+        pos++;
+        if (!leerFactorInfijo()) return false;
+    }
     return true;
 }
- 
-bool infExpr() {
-    if (!infTermino()) return false;
-    while (hayToken() && (actual()=="+" || actual()=="-"))
-        { posGlobal++; if (!infTermino()) return false; }
+
+// Lee una expresion completa: terminos separados por + o -
+bool leerExprInfija() {
+    if (!leerTerminoInfijo()) return false;
+
+    while (hayMasTokens() && (tokenActual() == "+" || tokenActual() == "-")) {
+        pos++;
+        if (!leerTerminoInfijo()) return false;
+    }
     return true;
 }
- 
+
 bool validarInfija(const string& expr) {
     tokenizar(expr);
-    int n = (int)tokens.size();
-    if (n < 3) return false;
- 
-    /* Caso 1: <expr> = <operando> */
-    posGlobal = 0;
-    if (infExpr() && hayToken() && actual()=="=") {
-        posGlobal++;
-        if (hayToken() && esOperando(actual())) {
-            posGlobal++;
-            if (posGlobal == n) return true;
+    int total = (int)tokens.size();
+
+    if (total < 3) return false;
+
+    // Caso 1: <expresion> = <variable>
+    pos = 0;
+    if (leerExprInfija() && hayMasTokens() && tokenActual() == "=") {
+        pos++;
+        if (hayMasTokens() && esOperando(tokenActual())) {
+            pos++;
+            if (pos == total) return true;
         }
     }
-    /* Caso 2: <operando> = <expr> */
-    posGlobal = 0;
-    if (esOperando(actual())) {
-        posGlobal++;
-        if (hayToken() && actual()=="=") {
-            posGlobal++;
-            if (infExpr() && posGlobal == n) return true;
+
+    // Caso 2: <variable> = <expresion>
+    pos = 0;
+    if (esOperando(tokenActual())) {
+        pos++;
+        if (hayMasTokens() && tokenActual() == "=") {
+            pos++;
+            if (leerExprInfija() && pos == total) return true;
         }
     }
+
     return false;
 }
- 
-/* ================================================================
- *  MENU PRINCIPAL
- * ================================================================ */
- int menu() {
-    cout << "\n========================================\n";
-    cout << "                   MENU \n";
-    cout << "========================================\n";
-    cout << "1. Verificar Notacion Prefija\n";
-    cout << "2. Verificar Notacion Postfija\n";
-    cout << "3. Verificar Notacion Infija\n";
-    cout << "4. Escribir nueva expresion\n";
-    cout << "5. Salir\n";
-    cout << "Opcion: ";
-    int opcion;
-    string lineaOpc;
-    getline(cin, lineaOpc);
-    try { opcion = stoi(lineaOpc); }
-    catch (...) { opcion = -1; } 
-    return opcion;
- }
 
+/* VALIDACION 
+    Prueba la expresion en los tres formatos y muestra en cuales es valida.*/
+
+void validarExpresion(const string& expr) {
+    bool esPrefija  = validarPrefija(expr);
+    bool esPosfija  = validarPosfija(expr);
+    bool esInfija   = validarInfija(expr);
+
+    cout << "\nExpresion: \"" << expr << "\"\n";
+    cout << "----------------------------------------\n";
+
+    if (!esPrefija && !esPosfija && !esInfija) {
+        cout << "La expresion no es valida en ninguna notacion.\n";
+        return;
+    }
+
+    if (esPrefija)  cout << "Es valida en notacion PREFIJA.\n";
+    if (esPosfija)  cout << "Es valida en notacion POSFIJA.\n";
+    if (esInfija)   cout << "Es valida en notacion INFIJA.\n";
+}
+
+/* PROGRAMA PRINCIPAL */
 
 int main() {
-    int    opcion;
     string expr;
- 
+
     cout << "Ingrese la expresion: ";
     getline(cin, expr);
- 
-    do {
-        opcion = menu();
-       
-        bool   valido   = false;
-        string notacion;
- 
-        switch (opcion) {
-            case 1: valido = validarPrefija(expr);  notacion = "PREFIJA";  break;
-            case 2: valido = validarPosfija(expr);  notacion = "POSFIJA";  break;
-            case 3: valido = validarInfija(expr);   notacion = "INFIJA";   break;
-            case 4: cout << "Ingrese la nueva expresion: ";
-                    getline(cin, expr);
-                    continue;
-            case 5: cout << "Saliendo...\n"; return 0;
-            default: cout << "Opcion invalida. Intente de nuevo.\n"; continue;
-        }
- 
-        cout << "\nResultado: \"" << expr << "\"\n";
-        cout << (valido ? "Es valida" : "No es valida")
-             << " en notacion " << notacion << ".\n";
- 
-    } while (true);
- 
-    cout << "Programa terminado.\n";
+
+    validarExpresion(expr);
+
     return 0;
 }
