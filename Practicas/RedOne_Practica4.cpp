@@ -290,11 +290,21 @@ void validarExpresion(const string& expr) {
 
 int main() {
     string expr;
+    char continuar;
 
-    cout << "Ingrese la expresion: ";
-    getline(cin, expr);
+    do {
+        cout << "Ingrese la expresion: ";
+        getline(cin, expr);
 
-    validarExpresion(expr);
+        validarExpresion(expr);
+
+        cout << "\n¿Desea ingresar otra expresion? (s/n): ";
+        cin >> continuar;
+        cin.ignore(); // Limpiar el buffer para el siguiente getline
+
+    } while (continuar == 's' || continuar == 'S');
+
+    cout << "Programa finalizado." << endl;
 
     return 0;
 }
