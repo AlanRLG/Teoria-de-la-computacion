@@ -1,5 +1,5 @@
 /*
-Practica 7 - Analizador Lexico de Codigo Fuente
+Practica 7 (extra) - Analizador Lexico de Codigo Fuente
 Descripcion: Analizador lexico sensible al contexto que detecta y contabiliza
            simbolos en un archivo fuente .c / .cpp. Utiliza una maquina de
            estados (NORMAL, EN_CADENA, EN_CARACTER, EN_COMENT_LINEA,
