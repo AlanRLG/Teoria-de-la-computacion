@@ -1,9 +1,5 @@
-// =====================================================================
 // Practica 8 - Analizador Lexico de Codigo Fuente
-// ---------------------------------------------------------------------
-// Descripcion:
-//   Analizador lexico y sintactico para un subconjunto de C escrito en
-//   C++17 moderno. Lee un archivo .c, detecta y contabiliza simbolos
+//   Lee un archivo .c, detecta y contabiliza simbolos
 //   lexicos mostrando la cantidad y porcentaje de aparicion de cada token,
 //   y valida que las siguientes estructuras esten bien formadas:
 //
@@ -12,7 +8,6 @@
 //   - Ciclos do / while (cada do debe cerrarse con su respectivo `while ( ... ) ;`).
 //   - Bloques switch / case (debe abrir llaves, contener al menos un case/default y cerrar llaves).
 //
-// Estrategia:
 //   Fase 1 - Lexeo:      Escaner caracter por caracter que ignora comentarios (linea/bloque)
 //                        y literales (cadenas/caracteres), emitiendo solo los tokens estructurales.
 //   Fase 2 - Validacion: Recorre el flujo de tokens usando un std::stack para rastrear el
@@ -29,7 +24,6 @@
 //          Leanos Gutierrez Alan Rodrigo
 //          Perez Marquez David Andrawi
 // Equipo:  Red One
-// =====================================================================
 
 #include <algorithm>
 #include <cctype>
@@ -43,7 +37,6 @@
 #include <unordered_map>
 #include <vector>
 
-// ---------------------------------------------------------------------
 // Modelo de tokens
 // ---------------------------------------------------------------------
 enum class TipoToken {
@@ -84,7 +77,6 @@ struct Token {
     int         linea;
 };
 
-// ---------------------------------------------------------------------
 // Analizador lexico
 // ---------------------------------------------------------------------
 class AnalizadorLexico {
@@ -273,7 +265,6 @@ private:
     std::vector<Token>  tokens_;
 };
 
-// ---------------------------------------------------------------------
 // Validador
 // ---------------------------------------------------------------------
 enum class TipoMarco {
@@ -529,7 +520,6 @@ private:
     int  lineaSwitch_       = 0;
 };
 
-// ---------------------------------------------------------------------
 // Utilidades de reporte
 // ---------------------------------------------------------------------
 static bool esReportable(TipoToken t) {
@@ -539,9 +529,8 @@ static bool esReportable(TipoToken t) {
 }
 
 static void imprimirTokens(const std::vector<Token>& tokens) {
-    std::cout << "=================================================\n"
-              << "  TOKENS DETECTADOS (orden cronologico)\n"
-              << "=================================================\n";
+    std::cout << "  TOKENS DETECTADOS (orden cronologico)\n"
+              << "\n";
     std::cout << " " << std::left << std::setw(6) << "Linea"
               << "  " << std::setw(12) << "Tipo"
               << "  " << "Lexema" << "\n";
@@ -555,22 +544,18 @@ static void imprimirTokens(const std::vector<Token>& tokens) {
 }
 
 static void imprimirResumen(const std::vector<std::string>& errores) {
-    std::cout << "\n=================================================\n"
-              << "  RESUMEN DEL ANALISIS\n"
-              << "=================================================\n";
+    std::cout << "\n  RESUMEN DEL ANALISIS\n"
+              << "\n";
     if (errores.empty()) {
         std::cout << " Estado: ESTRUCTURA VALIDA\n"
-                  << " No se detectaron errores de sintaxis en las\n"
-                  << " construcciones analizadas.\n";
+                  << " No se detectaron errores de sintaxis\n";
     } else {
         std::cout << " Estado: ERROR DE SINTAXIS (" << errores.size() << ")\n"
                   << " -------------------------------------------------\n";
         for (const auto& e : errores) std::cout << "  " << e << "\n";
     }
-    std::cout << "=================================================\n";
 }
 
-// ---------------------------------------------------------------------
 // Punto de entrada
 // ---------------------------------------------------------------------
 int main(int argc, char* argv[]) {
