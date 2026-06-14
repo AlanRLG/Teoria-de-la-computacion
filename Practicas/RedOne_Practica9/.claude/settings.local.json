@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./analizador fix_test_ok.c)",
+      "Bash(./analizador fix_test_comentario.c)",
+      "Bash(./analizador fix_test_arreglo.c)",
+      "Bash(./analizador fix_test_numeros.c)"
+    ]
+  }
+}
